@@ -1,6 +1,6 @@
 streamlit
 pandas
-torch==2.4.1+cpu
-scipy
 numpy
+scipy
+torch==2.4.1+cpu
 requests
