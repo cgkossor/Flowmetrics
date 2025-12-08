@@ -81,22 +81,28 @@ def parse_number_list(text):
 # ------------------------------------------------------------------
 @st.cache_resource
 def load_model():
-    url = st.secrets["MODEL_URL"]
-    resp = requests.get(url)
-    resp.raise_for_status()
-    bytes_io = io.BytesIO(resp.content)
-    model = PSDResNet()  # ← create first
-    model.load_state_dict(torch.load(bytes_io, map_location="cpu"))
-    return model
+    try:
+        url = st.secrets["MODEL_URL"]  # ← must be exact key name
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        model = PSDResNet()  # ← create architecture FIRST
+        state_dict = torch.load(io.BytesIO(response.content), map_location="cpu")
+        model.load_state_dict(state_dict)
+        model.eval()
+        st.success("Model loaded successfully!")
+        return model
+    except Exception as e:
+        st.error(f"Failed to load model: {e}")
+        raise e
 
 # ------------------------------------------------------------------
 # YOUR ORIGINAL PREDICT FUNCTION — ONLY ONE TINY FIX (df → results_df)
 # ------------------------------------------------------------------
 def predict_psd_target(inputs):
-    model = load_model()
+    model = load_model()  # ← now properly cached and working
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    model.eval()
+    model = model.to(device)
 
     if isinstance(inputs, dict):
         input_list = [inputs]
@@ -328,6 +334,7 @@ else:
     with col3:
         st.markdown("<h2 style='text-align:center;'>—</h2>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align:center;'>—</h3>", unsafe_allow_html=True)
+
 
 
 
