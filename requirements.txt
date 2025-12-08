@@ -2,5 +2,6 @@ streamlit
 pandas
 numpy
 scipy
-torch==2.4.1+cpu
 requests
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
