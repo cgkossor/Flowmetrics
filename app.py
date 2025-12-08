@@ -217,7 +217,6 @@ def predict_psd_target(inputs):
 
     ids = [inp.get('ID') or inp.get('filename') or inp.get('sample') or f"Sample_{i+1}" for i, inp in enumerate(input_list)]
     fracs = [inp.get('Frac_1_%') for inp in input_list]
-    prob_df = predict_with_uncertainty(spec_tensor, extra_tensor, n_mc=50,  bin_edges=bin_edges, category_names=category_names)
     pred_mean = prob_df['pred_final'].values
     pred_std = prob_df['pred_std'].values
     pred_capped = np.clip(pred_mean, bin_edges[0], bin_edges[-1])
@@ -334,6 +333,7 @@ else:
     with col3:
         st.markdown("<h2 style='text-align:center;'>—</h2>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align:center;'>—</h3>", unsafe_allow_html=True)
+
 
 
 
