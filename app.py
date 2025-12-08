@@ -261,13 +261,13 @@ with col1:
     with st.form("input_form"):
         name = st.text_input("Name", value="Sample 1")
         frac1 = st.number_input("Frac_1_%", value=25.0, step=0.1)
-        x10 = st.number_input("x10_um", value=5.0, step=0.1)
-        x50 = st.number_input("x50_um", value=25.0, step=0.1)
-        x90 = st.number_input("x90_um", value=80.0, step=0.1)
+        x10 = st.number_input("x10_um", value=13.83, step=0.1)
+        x50 = st.number_input("x50_um", value=100.36, step=0.1)
+        x90 = st.number_input("x90_um", value=240.17, step=0.1)
 
         st.caption("You can paste with brackets, spaces, commas — anything works")
-        x_um_str = st.text_input("x_um", value="1, 5, 10, 20, 50, 100, 200")
-        q3_str = st.text_input("Q3_%", value="0.01, 0.15, 0.40, 0.75, 0.95, 0.99, 1.0")
+        x_um_str = st.text_input("x_um", value="4.5, 5.5, 6.5, 7.5, 9.0, 11.0, 13.0, 15.5, 18.5, 21.5, 25.0, 30.0, 37.5, 45.0, 52.5, 62.5, 75.0, 90.0, 105.0, 125.0, 150.0, 180.0, 215.0, 255.0, 305.0, 365.0, 435.0, 515.0, 615.0, 735.0, 875.0")
+        q3_str = st.text_input("Q3_%", value="3.46, 4.26, 5.03, 5.78, 6.86, 8.22, 9.5, 11.0, 12.69, 14.29, 16.07, 18.53, 22.12, 25.63, 29.06, 33.57, 39.15, 45.68, 51.94, 59.75, 68.6, 77.7, 85.97, 92.37, 96.71, 98.88, 99.71, 100.0, 100.0, 100.0, 100.0")
 
         submitted = st.form_submit_button("Run Prediction")
 
@@ -328,5 +328,6 @@ else:
     with col3:
         st.markdown("<h2 style='text-align:center;'>—</h2>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align:center;'>—</h3>", unsafe_allow_html=True)
+
 
 
