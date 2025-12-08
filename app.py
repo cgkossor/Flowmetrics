@@ -135,7 +135,7 @@ def predict_psd_target(_model, inputs):
     _model.train()  # Keep dropout active
     preds = []
     with torch.no_grad():
-        for _ in range(30):
+        for _ in range(100):
             out = _model(spec_tensor.to(device), extra_tensor.to(device))
             preds.append((2.0 ** out).cpu().numpy().ravel())
     mc_preds = np.stack(preds)
@@ -238,4 +238,5 @@ with col3:
     else:
         st.markdown("<h2>—</h2>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
 
