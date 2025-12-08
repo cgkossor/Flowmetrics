@@ -404,7 +404,7 @@ if run:
                             'tickfont': {'size': 16}
                         },
                         'bar': {'color': '#2c3e50', 'thickness': 0.8},
-                        'bgcolor: "#f0f2f6",
+                        'bgcolor': "#f0f2f6",
                         'steps': [
                             {'range': [1, 2], 'color': '#e74c3c'},    # red
                             {'range': [2, 4], 'color': '#e67e22'},    # orange
@@ -480,3 +480,4 @@ else:
 # Footer
 st.markdown("---")
 st.caption("MY MODEL – Professional Flowability Dashboard © 2025")
+
