@@ -81,21 +81,21 @@ def parse_number_list(text):
 # ------------------------------------------------------------------
 @st.cache_resource
 def load_model():
-    model = PSDResNet()
-    url = st.secrets["MODEL_URL"]                   # your secret link
+    url = st.secrets["MODEL_URL"]
     resp = requests.get(url)
     resp.raise_for_status()
-    model_bytes = io.BytesIO(resp.content)
-    model.load_state_dict(torch.load(model_bytes, map_location="cpu"))
+    bytes_io = io.BytesIO(resp.content)
+    model = PSDResNet()  # ← create first
+    model.load_state_dict(torch.load(bytes_io, map_location="cpu"))
     return model
 
 # ------------------------------------------------------------------
 # YOUR ORIGINAL PREDICT FUNCTION — ONLY ONE TINY FIX (df → results_df)
 # ------------------------------------------------------------------
 def predict_psd_target(inputs):
-    model = load_model()                            # ← now uses secret
+    model = load_model()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
+    model.to(device)
     model.eval()
 
     if isinstance(inputs, dict):
@@ -156,7 +156,7 @@ def predict_psd_target(inputs):
         ], dtype=np.float32)
         extras.append(extra)
 
-    spec_tensor = torch.FloatTensor(np.array(spectra))[:, None, :]
+    spec_tensor = torch.FloatTensor(np.array(spectra))[:, None, :]   # (N,1,L)
     extra_tensor = torch.FloatTensor(np.array(extras))
 
     def predict_with_uncertainty(spec_tensor, extra_tensor, n_mc=50, bin_edges=None, category_names=None):
@@ -211,7 +211,7 @@ def predict_psd_target(inputs):
 
     ids = [inp.get('ID') or inp.get('filename') or inp.get('sample') or f"Sample_{i+1}" for i, inp in enumerate(input_list)]
     fracs = [inp.get('Frac_1_%') for inp in input_list]
-    prob_df = predict_with_uncertainty(spec_tensor, extra_tensor, n_mc=30, bin_edges=bin_edges, category_names=category_names)
+    prob_df = predict_with_uncertainty(spec_tensor, extra_tensor, n_mc=50,  bin_edges=bin_edges, category_names=category_names)
     pred_mean = prob_df['pred_final'].values
     pred_std = prob_df['pred_std'].values
     pred_capped = np.clip(pred_mean, bin_edges[0], bin_edges[-1])
@@ -328,4 +328,5 @@ else:
     with col3:
         st.markdown("<h2 style='text-align:center;'>—</h2>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align:center;'>—</h3>", unsafe_allow_html=True)
+
 
