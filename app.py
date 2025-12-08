@@ -153,7 +153,7 @@ def predict_psd_target(_model, inputs):
         return categories[-1]
 
     results = []
-    for i, (mean in range(len(mean_pred)):
+    for i in range(len(mean_pred)):
         ffc = mean_pred[i]
         cat = get_category(ffc)
         risk = "Low Risk" if std_pred[i] / max(ffc, 1e-8) < 0.1 else "Check Input"
@@ -238,3 +238,4 @@ with col3:
     else:
         st.markdown("<h2>—</h2>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
