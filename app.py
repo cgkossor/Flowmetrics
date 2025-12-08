@@ -254,7 +254,7 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.markdown("""
-        <div style="border: 2px solid #1E90FF; border-radius: 15px; padding: 20px; background-color: #f0f8ff; height: 520px;">
+        <div style="border: 2px solid #1E90FF; border-radius: 15px; padding: 20px; background-color: #f0f8ff; height: 100px;">
             <h3 style="text-align:center; color:#1E90FF;">Input Parameters</h3>
         </div>""", unsafe_allow_html=True)
 
@@ -273,14 +273,14 @@ with col1:
 
 with col2:
     st.markdown("""
-        <div style="border: 2px solid #32CD32; border-radius: 15px; padding: 20px; background-color: #f0fff0; height: 520px;
+        <div style="border: 2px solid #32CD32; border-radius: 15px; padding: 20px; background-color: #f0fff0; height: 100px;
              display: flex; flex-direction: column; justify-content: center; align-items: center;">
             <h3 style="text-align:center; color:#228B22;">Predicted FFC</h3>
         </div>""", unsafe_allow_html=True)
 
 with col3:
     st.markdown("""
-        <div style="border: 2px solid #FF8C00; border-radius: 15px; padding: 20px; background-color: #fffaf0; height: 520px;">
+        <div style="border: 2px solid #FF8C00; border-radius: 15px; padding: 20px; background-color: #fffaf0; height: 100px;">
             <h3 style="text-align:center; color:#FF4500;">Category Results</h3>
         </div>""", unsafe_allow_html=True)
 
@@ -328,3 +328,4 @@ else:
     with col3:
         st.markdown("<h2 style='text-align:center;'>—</h2>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align:center;'>—</h3>", unsafe_allow_html=True)
+
