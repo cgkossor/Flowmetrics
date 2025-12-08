@@ -270,240 +270,288 @@ def predict_psd_target(inputs):
 
 
 
-# ------------------------------------------------------------------
-# PAGE CONFIG & PROFESSIONAL STYLING
-# ------------------------------------------------------------------
-
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
 
 # ------------------------------------------------------------------
 # PAGE CONFIG & PROFESSIONAL STYLING
 # ------------------------------------------------------------------
 st.set_page_config(
-    page_title="MY MODEL - Flowability Prediction Dashboard",
-    page_icon="🧪",
+    page_title="Flowmetrics",
+    page_icon="💡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for premium look
+# Custom CSS - Compact header, fixed card heights, better alignment
 st.markdown("""
 <style>
-    .main {background-color: #f8f9fa;}
-    .block-container {padding-top: 2rem;}
-    h1, h2, h3 {font-family: 'Segoe UI', sans-serif;}
-    .card {
+    /* Remove default top padding and make page compact */
+    .main > div {padding-top: 1rem !important;}
+    .block-container {padding-top: 0.5rem !important;}
+    
+    .compact-header {
+        background: linear-gradient(135deg, 
+            #1e3a8a 0%, 
+            #3b82f6 45%, 
+            #60a5fa 100%
+        );
+        color: white;
+        padding: 1.6rem 2.5rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        
+        /* Multi-layered shadow for depth */
+        box-shadow: 
+            0 10px 30px rgba(30, 58, 138, 0.25),
+            0 6px 15px rgba(0, 0, 0, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);  /* subtle inner highlight */
+        
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px); /* optional glass effect if you add transparency */
+    }
+
+    .compact-header h1 {
+        margin: 0;
+        font-size: 2.6rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .compact-header p {
+        margin: 0.6rem 0 0;
+        font-size: 1.25rem;
+        opacity: 0.95;
+        font-weight: 400;
+        letter-spacing: 0.3px;
+    }
+
+    /* Fixed-height cards that DON'T collapse */
+    .fixed-card {
         background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        border: 1px solid #e0e0e0;
-        margin-bottom: 1rem;
+        padding: 1.2rem;
+        border-radius: 16px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        border: 1px solid #eaeaea;
+        min-height: 80px;  /* Keeps all cards same height */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }
-    .metric-value {
-        font-size: 2.8rem !important;
-        font-weight: 700;
+    .card-title {
         text-align: center;
+        color: #2c3e50;
+        font-size: 1.6rem !important;
+        font-weight: 600;
+        margin: 0 0 1.2rem 0;
     }
-    .metric-label {
-        font-size: 1.1rem;
-        color: #555;
-        text-align: center;
-        margin-top: -10px;
-    }
+
+    /* Button style */
     .stButton>button {
         background-color: #0066cc;
         color: white;
-        border-radius: 8px;
-        height: 3em;
-        width: 100%;
+        border-radius: 12px;
+        height: 3.4em;
         font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    /* Center emoji vertically with gauge */
+    .risk-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 380px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# HELPER: Parse list input flexibly
+# COMPACT HEADER (replaces tall default header)
+# ------------------------------------------------------------------
+st.markdown("""
+<div class="compact-header">
+    <h1>Flowmetrics</h1>
+    <p>Particle Size Distribution to Flowability Prediction Dashboard</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ------------------------------------------------------------------
+# SIDEBAR
+# ------------------------------------------------------------------
+with st.sidebar:
+    st.header("Input Parameters", divider="gray")
+    
+    name = st.text_input("Sample Name", value="Sample 1", label_visibility="collapsed", placeholder="Sample Name")
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        x10 = st.number_input("x10 (µm)", value=5.76, step=0.01, format="%.2f")
+        x50 = st.number_input("x50 (µm)", value=19.45, step=0.01, format="%.2f")
+    with col_b:
+        x90 = st.number_input("x90 (µm)", value=43.76, step=0.01, format="%.2f")
+    
+    frac1_str = st.text_input("Blend Fraction (%)", value="25.0")
+    try:
+        frac1 = float(frac1_str.replace("%", ""))
+    except:
+        frac1 = 0.0
+        st.error("Invalid fraction value")
+
+    st.markdown("**Full PSD Data**")
+    x_um_str = st.text_area("Particle sizes x (µm)", height=80,
+        value="0.9, 1.1, 1.3, 1.5, 1.8, 2.2, 2.6, 3.1, 3.7, 4.3, 5.0, 6.0, 7.5, 9.0, 10.5, 12.5, 15.0, 18.0, 21.0, 25.0, 30.0, 36.0, 43.0, 51.0, 61.0, 73.0, 87.0, 103.0, 123.0, 147.0, 175.0")
+    q3_str = st.text_area("Cumulative Q3 (%)", height=80,
+        value="1.41, 1.98, 2.5, 2.95, 3.56, 4.26, 4.89, 5.62, 6.47, 7.38, 8.54, 10.45, 13.82, 17.69, 21.97, 28.15, 36.23, 45.79, 54.51, 64.47, 74.27, 82.84, 89.56, 94.19, 97.17, 98.64, 99.26, 99.53, 99.77, 100.0, 100.0")
+
+    run_btn = st.button("Run Model", type="primary", use_container_width=True)
+
+# ------------------------------------------------------------------
+# HELPER
 # ------------------------------------------------------------------
 def parse_number_list(text):
-    import re
     return [float(x) for x in re.findall(r"[-+]?\d*\.?\d+", text.replace(",", " "))]
 
 # ------------------------------------------------------------------
-# LAYOUT: Title + Subtitle
-# ------------------------------------------------------------------
-st.markdown("<h1 style='text-align: center; color: #1e3a8a;'>MY MODEL</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #555; font-size:1.2rem;'>Particle Size Distribution → Flowability Prediction Dashboard</p>", unsafe_allow_html=True)
-st.markdown("---")
-
-# ------------------------------------------------------------------
-# SIDEBAR INPUTS (clean & professional)
-# ------------------------------------------------------------------
-with st.sidebar:
-    st.header("⚙️ Input Parameters")
-    
-    name = st.text_input("Sample Name", value="Sample 1")
-    
-    st.markdown("**Key Particle Sizes**")
-    col_a, col_b = st.columns(2)
-    with col_a:
-        x10 = st.number_input("x10 (µm)", value=13.83, step=0.1, format="%.2f")
-        x50 = st.number_input("x50 (µm)", value=100.36, step=0.1, format="%.2f")
-    with col_b:
-        x90 = st.number_input("x90 (µm)", value=240.17, step=0.1, format="%.2f")
-    
-    frac1 = st.slider("Fraction < 10 µm (%)", 0.0, 100.0, 25.0, 0.5)
-
-    st.markdown("**Full PSD Data**")
-    st.caption("Paste size (µm) and cumulative Q3(%) lists. Commas, spaces, brackets — anything works.")
-    
-    x_um_str = st.text_area(
-        "Particle sizes x (µm)",
-        value="4.5, 5.5, 6.5, 7.5, 9.0, 11.0, 13.0, 15.5, 18.5, 21.5, 25.0, 30.0, 37.5, 45.0, 52.5, 62.5, 75.0, 90.0, 105.0, 125.0, 150.0, 180.0, 215.0, 255.0, 305.0, 365.0, 435.0, 515.0, 615.0, 735.0, 875.0",
-        height=100
-    )
-    q3_str = st.text_area(
-        "Cumulative Q3 (%)",
-        value="3.46, 4.26, 5.03, 5.78, 6.86, 8.22, 9.5, 11.0, 12.69, 14.29, 16.07, 18.53, 22.12, 25.63, 29.06, 33.57, 39.15, 45.68, 51.94, 59.75, 68.6, 77.7, 85.97, 92.37, 96.71, 98.88, 99.71, 100.0, 100.0, 100.0, 100.0",
-        height=100
-    )
-
-    run_btn = st.button("🚀 Run Prediction", type="primary", use_container_width=True)
-
-# ------------------------------------------------------------------
-# MAIN DASHBOARD AREA
+# MAIN LAYOUT - Fixed height cards
 # ------------------------------------------------------------------
 col1, col2, col3 = st.columns([1, 1.2, 1])
 
-if run_btn:
+# Create containers with fixed styling
+card1 = col1.container()
+card2 = col2.container()
+card3 = col3.container()
+
+with card1:
+    st.markdown('<div class="fixed-card"><div class="card-title">Particle Size Distribution</div></div>', unsafe_allow_html=True)
+    plot_container1 = st.empty()
+
+with card2:
+    st.markdown('<div class="fixed-card"><div class="card-title">Predicted Flowability (FFC)</div></div>', unsafe_allow_html=True)
+    gauge_container = st.empty()
+    result_container = st.empty()
+
+with card3:
+    st.markdown('<div class="fixed-card"><div class="card-title">Prediction Confidence</div></div>', unsafe_allow_html=True)
+    risk_container = st.empty()
+
+# Default placeholder state
+if not run_btn:
+    with plot_container1:
+        st.markdown("<div style='text-align:center; padding:6rem 0; color:#95a5a6;'><h3>Waiting for input...</h3><p style='font-size:5rem;margin:2rem 0;'>—</p></div>", unsafe_allow_html=True)
+    with gauge_container:
+        st.markdown("<div style='text-align:center; padding:6rem 0; color:#95a5a6;'><h3>Waiting for input...</h3><p style='font-size:5rem;margin:2rem 0;'>—</p></div>", unsafe_allow_html=True)
+    with risk_container:
+        st.markdown("<div style='text-align:center; padding:6rem 0; color:#95a5a6;'><h3>Waiting for input...</h3><p style='font-size:5rem;margin:2rem 0;'>—</p></div>", unsafe_allow_html=True)
+else:
     try:
         x_um = parse_number_list(x_um_str)
         q3 = parse_number_list(q3_str)
 
-        if len(x_um) != len(q3):
-            st.error("x_um and Q3_% lists must have the same length!")
-        elif len(x_um) < 3:
-            st.error("Please provide at least 3 data points")
+        if len(x_um) != len(q3) or len(x_um) < 3:
+            st.error("PSD lists must have same length and ≥3 points!")
         else:
-            # === PLACEHOLDER: Replace with your actual model call ===
-            input_data = [{
-                "name": name,
-                "Frac_1_%": frac1,
-                "x10_um": x10,
-                "x50_um": x50,
-                "x90_um": x90,
-                "x_um": x_um,
-                "Q3_%": q3
-            }]
+            # === YOUR MODEL CALL HERE ===
+            input_data = [{"name": name, "Frac_1_%": frac1, "x10_um": x10, "x50_um": x50, "x90_um": x90,
+                           "x_um": x_um, "Q3_%": q3}]
             result_df = predict_psd_target(input_data)  # ← your real function
-            ffc_value = result_df.iloc[0]["Predicted_FFC"]
+            ffc_value = float(result_df.iloc[0]["Predicted_FFC"])
             cat = result_df.iloc[0]["Predicted_Category_Name"]
             risk = result_df.iloc[0]["Risk_Category"]
 
-            # ------------------------------------------------------------------
-            # COLUMN 1: PSD Plot (nice interactive Plotly chart)
-            # ------------------------------------------------------------------
-            with col1:
-                st.markdown("<div class='card'><h3 style='text-align:center;color:#2c3e50'>Particle Size Distribution</h3></div>", unsafe_allow_html=True)
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(x=x_um, y=q3, mode='lines+markers', name='Q3(%)',
-                                         line=dict(color='#3498db', width=3)))
-                fig.update_layout(height=400, template="simple_white", margin=dict(l=20,r=20,t=30,b=20))
-                fig.update_xaxes(title="Particle Size (µm)", type="log")
-                fig.update_yaxes(title="Cumulative Mass (%)")
-                st.plotly_chart(fig, use_container_width=True)
+            # Color logic
+            if ffc_value <= 2:
+                gauge_color = "#e74c3c"; risk_level = "Non-Flowing / Very Cohesive"
+            elif ffc_value <= 4:
+                gauge_color = "#e67e22"; risk_level = "Cohesive"
+            elif ffc_value <= 6:
+                gauge_color = "#f39c12"; risk_level = "Easy Flowing"
+            else:
+                gauge_color = "#27ae60"; risk_level = "Free Flowing"
 
-            # ------------------------------------------------------------------
-            # COLUMN 2: Predicted FFC + Beautiful Gauge
-            # ------------------------------------------------------------------
-            with col2:
-                st.markdown("<div class='card'><h3 style='text-align:center;color:#27ae60'>Predicted Flowability (FFC)</h3></div>", unsafe_allow_html=True)
+            risk_colors = {"Low Risk": "#2ecc71", "Moderate Risk": "#f39c12", "High Risk": "#e67e22", "Critical": "#c0392b"}
+            risk_color = risk_colors.get(risk, "#7f8c8d")
+            emoji = "🟢" if "Low" in risk else "🟡" if "Moderate" in risk else "🟠" if "High" in risk else "🔴"
 
-                # Color logic for gauge
-                if ffc_value >= 10:
-                    gauge_color = "#2ecc71"
-                    risk_level = "Free Flowing"
-                elif ffc_value >= 7:
-                    gauge_color = "#f39c12"
-                    risk_level = "Easy Flowing"
-                elif ffc_value >= 4:
-                    gauge_color = "#e67e22"
-                    risk_level = "Cohesive"
-                elif ffc_value >= 2:
-                    gauge_color = "#e74c3"
-                    risk_level = "Very Cohesive"
-                else:
-                    gauge_color = "#c0392b"
-                    risk_level = "Non-Flowing"
+            # === COL1: PSD Plot ===
+            with plot_container1:
+                fig_psd = go.Figure()
+                fig_psd.add_trace(go.Scatter(x=x_um, y=q3, mode='lines+markers', line=dict(color='#3498db', width=4), marker=dict(size=6), showlegend=False))
+                for val, label in [(x10, "x10"), (x50, "x50"), (x90, "x90")]:
+                    idx = min(range(len(x_um)), key=lambda i: abs(x_um[i] - val))
+                    y_val = q3[idx]
+                    fig_psd.add_trace(go.Scatter(x=[val], y=[y_val], mode='markers', marker=dict(color="white", size=16), showlegend=False))
+                fig_psd.update_layout(height=420, template="simple_white", margin=dict(t=30), xaxis_type="log", xaxis_title="Particle Size (µm)", yaxis_title="CDF (%)", yaxis_range=[0,105])
+                st.plotly_chart(fig_psd, use_container_width=True, config={'displayModeBar': False})
 
+            # === COL2: Gauge + Result ===
+            with gauge_container:
                 fig_gauge = go.Figure(go.Indicator(
-                    mode = "gauge+number+delta",
-                    value = ffc_value,
-                    domain = {'x': [0, 1], 'y': [0, 1]},
-                    title = {'text': "<b>FFC Value</b>", 'font': {'size': 24}},
-                    delta = {'reference': 5},
-                    gauge = {
-                        'axis': {'range': [0, 20], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                    mode="gauge+number",
+                    value=ffc_value,
+                    number={'font': {'size': 56, 'color': gauge_color}},
+                    gauge={
+                        'axis': {'range': [1, 10], 'tickvals': [1,2,4,6,10], 'ticktext': ['1','2','4','6','10'], 'tickfont': {'size': 18}},
                         'bar': {'color': gauge_color},
-                        'bgcolor': "white",
-                        'borderwidth': 2,
-                        'bordercolor': "gray",
+                        'bgcolor': "#f8f9fa",
                         'steps': [
-                            {'range': [0, 2], 'color': '#c0392b'},
-                            {'range': [2, 4], 'color': '#e74c22'},
-                            {'range': [4, 7], 'color': '#f39c12'},
-                            {'range': [7, 10], 'color': '#f1c40f'},
-                            {'range': [10, 20], 'color': '#2ecc71'}],
-                        'threshold': {
-                            'line': {'color': "red", 'width': 6},
-                            'thickness': 0.75,
-                            'value': 4}}))
+                            {'range': [1,2], 'color': '#fce8e8'},
+                            {'range': [2,4], 'color': '#fdebd0'},
+                            {'range': [4,6], 'color': '#fffacd'},
+                            {'range': [6,10], 'color': '#e8f5e9'}
+                        ],
+                        'threshold': {'line': {'color': gauge_color, 'width': 8}, 'value': ffc_value}
+                    }
+                ))
+                fig_gauge.update_layout(height=380, margin=dict(l=40, r=60, t=40, b=10), paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_gauge, use_container_width=True, config={'displayModeBar': False})
 
-                fig_gauge.update_layout(height=400, font={'size': 16})
-                st.plotly_chart(fig_gauge, use_container_width=True)
-
-                st.markdown(f"<p class='metric' style='color:{gauge_color};font-weight:bold'>{cat}</p>", unsafe_allow_html=True)
-
-            # ------------------------------------------------------------------
-            # COLUMN 3: Risk Category + Summary Card
-            # ------------------------------------------------------------------
-            with col3:
-                st.markdown("<div class='card'><h3 style='text-align:center;color:#c0392b'>Risk Assessment</h3></div>", unsafe_allow_html=True)
-
-                risk_colors = {
-                    "Low Risk": "#2ecc71",
-                    "Moderate Risk": "#f39c12",
-                    "High Risk": "#e74c22",
-                    "Critical": "#c0392b"
-                }
-                risk_color = risk_colors.get(risk, "#7f8c8d")
-
+                        # === Move the category text right under the gauge (almost no gap) ===
+            with result_container:
                 st.markdown(f"""
-                <div style="text-align:center; padding: 2rem 0;">
-                    <div style="font-size: 4.5rem;">{'🔴' if 'Critical' in risk else '🟠' if 'High' in risk else '🟡' if 'Moderate' in risk else '🟢'}</div>
-                    <h2 style="color:{risk_color}; margin:0.5rem 0;">{risk}</h2>
-                    <p style="font-size:1.2rem; color:#444;">{risk_level}</p>
+                <div style="
+                    text-align: center;
+                    margin-top: -80px;        /* pulls it UP into/very close to the gauge */
+                    margin-bottom: 10px;
+                ">
+                    <h2 style="
+                        color: {gauge_color};
+                        margin: 0;
+                        font-size: 2.2rem;
+                        font-weight: 700;
+                        line-height: 1.2;
+                    ">
+                        {cat}
+                    </h2>
                 </div>
                 """, unsafe_allow_html=True)
 
-                st.info(f"**Sample:** {name}")
+            # === COL3: Risk Card - Emoji aligned with gauge ===
+            with risk_container:
+                st.markdown(f"""
+                <div style="
+                    height: 400px;                     /* same as gauge height */
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: flex-end;         /* pushes everything to the BOTTOM */
+                    padding-bottom: -60px;              /* extra space from very bottom – adjust as needed */
+                    text-align: center;
+                ">
+                    <div style="font-size: 6.5rem; margin-bottom: 1rem;">{emoji}</div>
+                    <h2 style="color:{risk_color}; margin:0.6rem 0; font-size: 2.1rem; font-weight:600;">{risk}</h2>
+                </div>
+                """, unsafe_allow_html=True)
 
     except Exception as e:
-        st.error("Input error – check your PSD lists!")
+        st.error("Error processing input. Check your data.")
         st.exception(e)
-else:
-    # Placeholder when nothing is run
-    col1, col2, col3 = st.columns([1, 1.2, 1])
-    with col1:
-        st.markdown("<div class='card'><h3 style='text-align:center;color:#95a5a6'>Particle Size Distribution</h3><p style='text-align:center;color:#bdc3c7;font-size:4rem;margin-top:3rem'>—</p></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown("<div class='card'><h3 style='text-align:center;color:#27ae60'>Predicted FFC</h3><p style='text-align:center;color:#bdc3c7;font-size:4.5rem;margin-top:3rem'>—</p></div>", unsafe_allow_html=True)
-    with col3:
-        st.markdown("<div class='card'><h3 style='text-align:center;color:#c0392b'>Risk Assessment</h3><p style='text-align:center;color:#bdc3c7;font-size:4rem;margin-top:3rem'>—</p></div>", unsafe_allow_html=True)
 
+# ------------------------------------------------------------------
 # Footer
+# ------------------------------------------------------------------
 st.markdown("---")
-st.markdown("<p style='text-align:center;color:#95a5a6;font-size:0.9rem'>MY MODEL – Professional Flowability Prediction Dashboard © 2025</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#95a5a6; font-size:0.95rem; margin:0.5rem 0;'>"
+            "C. Kossor (cgkossor@gmail.com) Flowmetrics Flowability Prediction Dashboard © 2025</p>", unsafe_allow_html=True)
