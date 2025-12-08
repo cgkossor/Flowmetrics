@@ -167,26 +167,36 @@ def predict_psd_target(inputs):
 
     def predict_with_uncertainty(spec_tensor, extra_tensor, n_mc=50, bin_edges=None, category_names=None):
         model.train()
+        # ←←← THIS IS THE MAGIC PART — everyone does this
+        def set_bn_eval(m):
+            if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d)):
+                m.eval()
+        model.apply(set_bn_eval)
+        # ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
         device = next(model.parameters()).device
+    
         preds = []
         with torch.no_grad():
             for _ in range(n_mc):
                 out = model(spec_tensor.to(device), extra_tensor.to(device))
                 preds.append((2.0 ** out).cpu().numpy().ravel())
-        mc_preds = np.stack(preds)
+    
+        mc_preds = np.stack(preds)  # (n_mc, N)
         pred_mean = mc_preds.mean(axis=0)
         pred_std = mc_preds.std(axis=0)
+    
         counts = np.stack([np.histogram(mc_preds[:, i], bins=bin_edges, density=False)[0]
-                           for i in range(mc_preds.shape[1])])
-        probs = counts / np.maximum(counts.sum(axis=1, keepdims=True), 1)
+            for i in range(mc_preds.shape[1])])
+        probs = counts / np.maximum(counts.sum(axis=1, keepdims=True), 1)  
+    
         prob_df = pd.DataFrame(probs, columns=[f'Prob_{c}' for c in category_names])
         prob_df['pred_final'] = np.round(pred_mean, 6)
         prob_df['pred_std'] = np.round(pred_std, 6)
+    
         return prob_df
 
     bin_edges = [0.0, 2.0, 4.0, 6.0, 10.0, 100]
     category_names = ['Very Cohesive', 'Cohesive', 'Semi Cohesive', 'Easy Flowing', 'Free Flowing']
-    prob_df = predict_with_uncertainty(spec_tensor, extra_tensor, 50, bin_edges, category_names)
 
     def classify_with_edges(value, edges, names):
         for i, edge in enumerate(edges[1:], start=1):
@@ -217,6 +227,7 @@ def predict_psd_target(inputs):
 
     ids = [inp.get('ID') or inp.get('filename') or inp.get('sample') or f"Sample_{i+1}" for i, inp in enumerate(input_list)]
     fracs = [inp.get('Frac_1_%') for inp in input_list]
+    prob_df = predict_with_uncertainty(spec_tensor, extra_tensor, 50, bin_edges, category_names)
     pred_mean = prob_df['pred_final'].values
     pred_std = prob_df['pred_std'].values
     pred_capped = np.clip(pred_mean, bin_edges[0], bin_edges[-1])
@@ -333,6 +344,7 @@ else:
     with col3:
         st.markdown("<h2 style='text-align:center;'>—</h2>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align:center;'>—</h3>", unsafe_allow_html=True)
+
 
 
 
