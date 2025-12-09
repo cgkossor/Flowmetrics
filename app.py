@@ -414,11 +414,8 @@ else:
             """, unsafe_allow_html=True)
 
         # === 3) RISK CARD — BALL EMOJIS + CONFIDENCE IN % ===
-         with risk_card:
+        with risk_card:
             confidence_percent = int(round(confidence * 100))
-        
-            # Ball emoji logic
-
         
             st.markdown(f"""
             <div style="
@@ -430,12 +427,12 @@ else:
                 text-align: center;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             ">
-                <!-- Big Ball Emoji -->
+                <!-- Your big colored ball emoji -->
                 <div style="font-size: 7.8rem; margin-bottom: 1.2rem; line-height: 1;">
                     {emoji}
                 </div>
         
-                <!-- Risk Category -->
+                <!-- Risk category -->
                 <h2 style="
                     color: {risk_color};
                     margin: 0;
@@ -446,13 +443,13 @@ else:
                     {risk}
                 </h2>
         
-                <!-- Confidence — WHITE & BOLD -->
+                <!-- Confidence = WHITE, bold, perfectly centered -->
                 <p style="
-                    margin: 0.8rem 0 0 0;
+                    margin: 0.9rem 0 0 0;
                     font-size: 1.55rem;
                     color: white;
                     font-weight: 600;
-                    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
                 ">
                     Confidence: <strong>{confidence_percent}%</strong>
                 </p>
