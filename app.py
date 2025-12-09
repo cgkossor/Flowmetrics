@@ -416,7 +416,7 @@ else:
         # === 3) RISK CARD — BALL EMOJIS + CONFIDENCE IN % ===
         with risk_card:
             confidence_percent = int(round(confidence * 100))
-        
+
             st.markdown(f"""
             <div style="
                 height: 400px;
@@ -425,31 +425,31 @@ else:
                 justify-content: center;
                 align-items: center;
                 text-align: center;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: transparent;
             ">
-                <!-- Your big colored ball emoji -->
-                <div style="font-size: 7.8rem; margin-bottom: 1.2rem; line-height: 1;">
+                <!-- Big Ball Emoji -->
+                <div style="font-size: 7.8rem; margin-bottom: 1.3rem; line-height: 1;">
                     {emoji}
                 </div>
-        
-                <!-- Risk category -->
+
+                <!-- Risk Category Title -->
                 <h2 style="
                     color: {risk_color};
-                    margin: 0;
-                    font-size: 2.1rem;
+                    margin: 0 0 0.8rem 0;
+                    font-size: 2.15rem;
                     font-weight: 700;
                     letter-spacing: -0.5px;
                 ">
                     {risk}
                 </h2>
-        
-                <!-- Confidence = WHITE, bold, perfectly centered -->
+
+                <!-- Confidence — WHITE, BOLD, PERFECTLY CENTERED -->
                 <p style="
-                    margin: 0.9rem 0 0 0;
-                    font-size: 1.55rem;
+                    margin: 0;
+                    font-size: 1.6rem;
                     color: white;
-                    font-weight: 600;
-                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    font-weight: 700;
+                    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
                 ">
                     Confidence: <strong>{confidence_percent}%</strong>
                 </p>
