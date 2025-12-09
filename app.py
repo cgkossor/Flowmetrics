@@ -414,23 +414,24 @@ else:
             """, unsafe_allow_html=True)
 
         # === 3) RISK CARD — BALL EMOJIS + CONFIDENCE IN % ===
-        with risk_card:
+         with risk_card:
             confidence_percent = int(round(confidence * 100))
             st.markdown(f"""
-            <div style="height:400px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
-                        background:linear-gradient(135deg,#2c3e50,#1a2530);border-radius:16px;
-                        box-shadow:0 8px 20px rgba(0,0,0,0.3);color:white;padding:20px;">
-                <div style="font-size:8rem;margin-bottom:0.5rem;">{emoji}</div>
-                <h2 style="color:{risk_color};margin:0.5rem 0;font-size:2.3rem;font-weight:700;">{risk}</h2>
-                <div style="margin-top:2rem;padding:1.2rem 3rem;background:rgba(255,255,255,0.18);
-                            border-radius:50px;border:1px solid rgba(255,255,255,0.2);">
-                    <p style="margin:0;font-size:4.5rem;font-weight:900;color:white;letter-spacing:3px;line-height:1;">
-                        {confidence_percent}<span style="font-size:2.4rem;font-weight:700;">%</span>
-                    </p>
-                    <p style="margin:0.6rem 0 0 0;font-size:1.5rem;opacity:0.9;font-weight:500;">
-                        Prediction Confidence
-                    </p>
-                </div>
+            <div style="
+                height: 400px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+            ">
+                <div style="font-size: 7.5rem; margin-bottom: 0.8rem;">{emoji}</div>
+                <h2 style="color: {risk_color}; margin: 0.4rem 0; font-size: 2.1rem; font-weight: 600;">
+                    {risk}
+                </h2>
+                <p style="margin: 0.6rem 0 0 0; font-size: 1.5rem; color: #444;">
+                    Confidence: <strong>{confidence_percent}%</strong>
+                </p>
             </div>
             """, unsafe_allow_html=True)
 
