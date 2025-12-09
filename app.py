@@ -332,15 +332,22 @@ else:
 
         # === 1) ORIGINAL CDF PLOT WITH x10/x50/x90 MARKERS ===
         with psd_plot:
-            # Generate the exact same smooth log-spaced x-axis your old code used implicitly
+            # Extract the 5 fitted bimodal parameters from the result
+            w1       = result['w_fine']
+            med1     = result['med_fine']
+            sigma1   = result['sigma_fine']
+            med2     = result['med_coarse']
+            sigma2   = result['sigma_coarse']
+        
+            # Generate smooth log-spaced x-axis (same range you always used)
             x_um_generated = np.logspace(np.log10(0.5), np.log10(1000), 300)
             
-            # Evaluate the fitted bimodal CDF → Q3 in %
+            # Compute CDF from fitted bimodal distribution
             q3_generated = bimodal_cdf(x_um_generated, w1, med1, sigma1, med2, sigma2) * 100
         
             fig_psd = go.Figure()
             
-            # Main CDF line — EXACT same style as your original
+            # Main blue line — identical to your original
             fig_psd.add_trace(go.Scatter(
                 x=x_um_generated,
                 y=q3_generated,
@@ -350,10 +357,9 @@ else:
                 showlegend=False
             ))
         
-            # Add the three white circle markers for x10, x50, x90 — IDENTICAL to your code
-            for val, label in [(x10, "x10"), (x50, "x50"), (x90, "x90")]:
-                # Find closest point on the generated curve
-                idx = min(range(len(x_um_generated)), key=lambda i: abs(x_um_generated[i] - val))
+            # White circles at x10, x50, x90 — exactly like before
+            for val in [x10, x50, x90]:
+                idx = np.argmin(np.abs(x_um_generated - val))
                 y_val = q3_generated[idx]
                 fig_psd.add_trace(go.Scatter(
                     x=[val],
@@ -363,7 +369,7 @@ else:
                     showlegend=False
                 ))
         
-            # EXACT same layout as your original — not a single pixel changed
+            # Your original layout — not a single change
             fig_psd.update_layout(
                 height=420,
                 template="simple_white",
