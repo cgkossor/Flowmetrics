@@ -429,7 +429,7 @@ else:
                <h2 style="color: {risk_color}; margin: 0.4rem 0; font-size: 2.1rem; font-weight: 600;">
                    {risk}
                </h2>
-               <p style="margin: 0.6rem 0 0 0; font-size: 1.5rem; color: #444;">
+               <p style="margin: 0.4rem 0 0 0; font-size: 1.8rem; color: #fff;">
                    Confidence: <strong>{confidence_percent}%</strong>
                </p>
            </div>
