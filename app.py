@@ -414,26 +414,26 @@ else:
             """, unsafe_allow_html=True)
 
         # === 3) RISK CARD — BALL EMOJIS + CONFIDENCE IN % ===
-         with risk_card:
-            confidence_percent = int(round(confidence * 100))
-            st.markdown(f"""
-            <div style="
-                height: 400px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                text-align: center;
+        with risk_card:
+           confidence_percent = int(round(confidence * 100))
+           st.markdown(f"""
+           <div style="
+               height: 400px;
+               display: flex;
+               flex-direction: column;
+               justify-content: center;
+               align-items: center;
+               text-align: center;
             ">
-                <div style="font-size: 7.5rem; margin-bottom: 0.8rem;">{emoji}</div>
-                <h2 style="color: {risk_color}; margin: 0.4rem 0; font-size: 2.1rem; font-weight: 600;">
-                    {risk}
-                </h2>
-                <p style="margin: 0.6rem 0 0 0; font-size: 1.5rem; color: #444;">
-                    Confidence: <strong>{confidence_percent}%</strong>
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+               <div style="font-size: 7.5rem; margin-bottom: 0.8rem;">{emoji}</div>
+               <h2 style="color: {risk_color}; margin: 0.4rem 0; font-size: 2.1rem; font-weight: 600;">
+                   {risk}
+               </h2>
+               <p style="margin: 0.6rem 0 0 0; font-size: 1.5rem; color: #444;">
+                   Confidence: <strong>{confidence_percent}%</strong>
+               </p>
+           </div>
+           """, unsafe_allow_html=True)
 
         # Optional expander stays if you want it
         with st.expander("Show fitted bimodal parameters"):
