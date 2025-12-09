@@ -8,6 +8,8 @@ from scipy.optimize import minimize
 import plotly.graph_objects as go
 import re
 import warnings
+import requests
+import io
 warnings.filterwarnings("ignore")
 
 # ===================================================================
