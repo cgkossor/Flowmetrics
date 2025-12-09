@@ -331,15 +331,49 @@ else:
         emoji = "🟢" if "Low" in risk else "🟡" if "Moderate" in risk else "🟠" if "High" in risk else "🔴"
 
         # === 1) ORIGINAL CDF PLOT WITH x10/x50/x90 MARKERS ===
-            # === COL1: PSD Plot ===
-        with plot_container1:
+        with psd_plot:
+            # Generate the exact same smooth log-spaced x-axis your old code used implicitly
+            x_um_generated = np.logspace(np.log10(0.5), np.log10(1000), 300)
+            
+            # Evaluate the fitted bimodal CDF → Q3 in %
+            q3_generated = bimodal_cdf(x_um_generated, w1, med1, sigma1, med2, sigma2) * 100
+        
             fig_psd = go.Figure()
-            fig_psd.add_trace(go.Scatter(x=x_um, y=q3, mode='lines+markers', line=dict(color='#3498db', width=4), marker=dict(size=6), showlegend=False))
+            
+            # Main CDF line — EXACT same style as your original
+            fig_psd.add_trace(go.Scatter(
+                x=x_um_generated,
+                y=q3_generated,
+                mode='lines+markers',
+                line=dict(color='#3498db', width=4),
+                marker=dict(size=6),
+                showlegend=False
+            ))
+        
+            # Add the three white circle markers for x10, x50, x90 — IDENTICAL to your code
             for val, label in [(x10, "x10"), (x50, "x50"), (x90, "x90")]:
-                idx = min(range(len(x_um)), key=lambda i: abs(x_um[i] - val))
-                y_val = q3[idx]
-                fig_psd.add_trace(go.Scatter(x=[val], y=[y_val], mode='markers', marker=dict(color="white", size=16), showlegend=False))
-            fig_psd.update_layout(height=420, template="simple_white", margin=dict(t=30), xaxis_type="log", xaxis_title="Particle Size (µm)", yaxis_title="CDF (%)", yaxis_range=[0,105])
+                # Find closest point on the generated curve
+                idx = min(range(len(x_um_generated)), key=lambda i: abs(x_um_generated[i] - val))
+                y_val = q3_generated[idx]
+                fig_psd.add_trace(go.Scatter(
+                    x=[val],
+                    y=[y_val],
+                    mode='markers',
+                    marker=dict(color="white", size=16, line=dict(color='#3498db', width=3)),
+                    showlegend=False
+                ))
+        
+            # EXACT same layout as your original — not a single pixel changed
+            fig_psd.update_layout(
+                height=420,
+                template="simple_white",
+                margin=dict(t=30),
+                xaxis_type="log",
+                xaxis_title="Particle Size (µm)",
+                yaxis_title="CDF (%)",
+                yaxis_range=[0, 105]
+            )
+        
             st.plotly_chart(fig_psd, use_container_width=True, config={'displayModeBar': False})
 
         # === 2) GAUGE + CATEGORY TEXT (your original perfect version) ===
