@@ -331,54 +331,15 @@ else:
         emoji = "🟢" if "Low" in risk else "🟡" if "Moderate" in risk else "🟠" if "High" in risk else "🔴"
 
         # === 1) ORIGINAL CDF PLOT WITH x10/x50/x90 MARKERS ===
-        w = result['w_fine']
-        med1 = result['med_fine']
-        s1 = result['sigma_fine']
-        med2 = result['med_coarse']
-        s2 = result['sigma_coarse']
-
-        x_um = np.logspace(np.log10(0.5), np.log10(1000), 200)
-        q3 = bimodal_cdf(x_um, w, med1, s1, med2, s2) * 100  # convert to %
-
-        with psd_plot:
+            # === COL1: PSD Plot ===
+        with plot_container1:
             fig_psd = go.Figure()
-            fig_psd.add_trace(go.Scatter(
-                x=x_um, y=q3,
-                mode='lines+markers',
-                line=dict(color='#3498db', width=4),
-                marker=dict(size=6),
-                showlegend=False
-            ))
-
-            # White circles with labels at x10, x50, x90
+            fig_psd.add_trace(go.Scatter(x=x_um, y=q3, mode='lines+markers', line=dict(color='#3498db', width=4), marker=dict(size=6), showlegend=False))
             for val, label in [(x10, "x10"), (x50, "x50"), (x90, "x90")]:
-                idx = np.argmin(np.abs(x_um - val))
+                idx = min(range(len(x_um)), key=lambda i: abs(x_um[i] - val))
                 y_val = q3[idx]
-                fig_psd.add_trace(go.Scatter(
-                    x=[val], y=[y_val],
-                    mode='markers',
-                    marker=dict(color="white", size=16, line=dict(color="#3498db", width=3)),
-                    showlegend=False
-                ))
-                # Optional: add text label inside circle
-                fig_psd.add_annotation(
-                    x=val, y=y_val,
-                    text=label,
-                    showarrow=False,
-                    font=dict(size=11, color="#2c3e50"),
-                    bgcolor="white",
-                    borderpad=4
-                )
-
-            fig_psd.update_layout(
-                height=420,
-                template="simple_white",
-                margin=dict(t=30),
-                xaxis_type="log",
-                xaxis_title="Particle Size (µm)",
-                yaxis_title="CDF (%)",
-                yaxis_range=[0, 105]
-            )
+                fig_psd.add_trace(go.Scatter(x=[val], y=[y_val], mode='markers', marker=dict(color="white", size=16), showlegend=False))
+            fig_psd.update_layout(height=420, template="simple_white", margin=dict(t=30), xaxis_type="log", xaxis_title="Particle Size (µm)", yaxis_title="CDF (%)", yaxis_range=[0,105])
             st.plotly_chart(fig_psd, use_container_width=True, config={'displayModeBar': False})
 
         # === 2) GAUGE + CATEGORY TEXT (your original perfect version) ===
