@@ -328,7 +328,7 @@ else:
         risk_color = risk_colors.get(risk, "#7f8c8d")
 
         # === BALL EMOJIS EXACTLY AS YOU WANTED ===
-       emoji = "🟢" if "Low" in risk else "🟡" if "Moderate" in risk else "🟠" if "High" in risk else "🔴"
+        emoji = "🟢" if "Low" in risk else "🟡" if "Moderate" in risk else "🟠" if "High" in risk else "🔴"
 
         # === 1) ORIGINAL CDF PLOT WITH x10/x50/x90 MARKERS ===
         w = result['w_fine']
