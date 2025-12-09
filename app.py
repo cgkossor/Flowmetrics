@@ -427,43 +427,19 @@ else:
                 background: linear-gradient(135deg, #2c3e50, #1a2530);
                 border-radius: 16px;
                 box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+                color: white;
             ">
-                <div style="font-size: 8rem; margin-bottom: 0.5rem; line-height: 1;">{emoji}</div>
+                <div style="font-size: 8rem; margin-bottom: 0.5rem;">{emoji}</div>
                 
-                <h2 style="
-                    color: {risk_color}; 
-                    margin: 0.5rem 0; 
-                    font-size: 2.3rem; 
-                    font-weight: 700;
-                    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
-                ">
+                <h2 style="color: {risk_color}; margin: 0.5rem 0; font-size: 2.3rem; font-weight: 700;">
                     {risk}
                 </h2>
                 
-                <div style="
-                    margin-top: 1.8rem;
-                    padding: 1rem 2rem;
-                    background: rgba(255,255,255,0.12);
-                    border-radius: 50px;
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255,255,255,0.1);
-                ">
-                    <p style="
-                        margin: 0;
-                        font-size: 3.8rem;           <!-- MUCH BIGGER -->
-                        font-weight: 800;
-                        color: white !important;     <!-- FORCED WHITE -->
-                        text-shadow: 0 4px 12px rgba(0,0,0,0.6);
-                        letter-spacing: 1px;
-                    ">
-                        {confidence_percent}<span style="font-size: 2rem; font-weight: 600;">%</span>
+                <div style="margin-top: 2rem; padding: 1.2rem 2.5rem; background: rgba(255,255,255,0.15); border-radius: 50px;">
+                    <p style="margin: 0; font-size: 4.2rem; font-weight: 900; color: white; letter-spacing: 2px;">
+                        {confidence_percent}<span style="font-size: 2.2rem;">%</span>
                     </p>
-                    <p style="
-                        margin: 0.4rem 0 0 0;
-                        font-size: 1.4rem;
-                        color: rgba(255,255,255,0.8);
-                        font-weight: 500;
-                    ">
+                    <p style="margin: 0.5rem 0 0 0; font-size: 1.4rem; opacity: 0.9;">
                         Prediction Confidence
                     </p>
                 </div>
