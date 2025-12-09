@@ -66,7 +66,7 @@ class PSDResNet(nn.Module):
         x = self.pool(x).flatten(1)
         x = self.fc_cnn(x)
         e = self.fc_extra(x_extra)
-        return self.head(torch.cat([x, e], dim=1)).squeeze(-1))
+        return self.head(torch.cat([x, e], dim=1)).squeeze(-1)
 
 # ===================================================================
 # 3. LOAD MODEL (cached + secrets support)
