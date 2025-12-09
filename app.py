@@ -310,61 +310,131 @@ else:
             "Frac_1_%": frac
         })
 
-        ffc = result['Predicted_FFC']
+        ffc_value = result['Predicted_FFC']
         cat = result['Predicted_Category']
         risk = result['Risk_Category']
+        confidence = result['Confidence']  # 0.0 to 1.0
 
-        # Colors
-        gauge_color = "#e74c3c" if ffc <= 2 else "#e67e22" if ffc <= 4 else "#f39c12" if ffc <= 6 else "#27ae60"
-        emoji = "Critical" in risk and "Critical" or "High" in risk and "High" or "Moderate" in risk and "Moderate" or "Low" in risk and "Low" or "Very Low"
+        # === COLORS ===
+        gauge_color = "#e74c3c" if ffc_value <= 2 else "#e67e22" if ffc_value <= 4 else "#f39c12" if ffc_value <= 6 else "#27ae60"
 
-        risk_color = {"Very Low Risk": "#2ecc71", "Low Risk": "#27ae60", "Moderate Risk": "#f39c12",
-                      "High Risk": "#e67e22", "Critical Risk – Do Not Use Without Review": "#c0392b"}.get(risk, "#7f8c8d")
+        risk_colors = {
+            "Very Low Risk": "#2ecc71",
+            "Low Risk": "#2ecc71",
+            "Moderate Risk": "#f39c12",
+            "High Risk": "#e67e22",
+            "Critical Risk – Do Not Use Without Review": "#c0392b"
+        }
+        risk_color = risk_colors.get(risk, "#7f8c8d")
 
-        # PSD Plot (reconstructed bimodal)
-        w, mf, sf, mc, sc = result['w_fine'], result['med_fine'], result['sigma_fine'], result['med_coarse'], result['sigma_coarse']
-        x_fine = np.logspace(-1, 3, 500)
-        pdf_fine = w * lognorm.pdf(x_fine, s=sf, scale=mf)
-        pdf_coarse = (1-w) * lognorm.pdf(x_fine, s=sc, scale=mc)
+        # === BALL EMOJIS EXACTLY AS YOU WANTED ===
+       emoji = "🟢" if "Low" in risk else "🟡" if "Moderate" in risk else "🟠" if "High" in risk else "🔴"
+
+        # === 1) ORIGINAL CDF PLOT WITH x10/x50/x90 MARKERS ===
+        w = result['w_fine']
+        med1 = result['med_fine']
+        s1 = result['sigma_fine']
+        med2 = result['med_coarse']
+        s2 = result['sigma_coarse']
+
+        x_um = np.logspace(np.log10(0.5), np.log10(1000), 200)
+        q3 = bimodal_cdf(x_um, w, med1, s1, med2, s2) * 100  # convert to %
+
         with psd_plot:
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=x_fine, y=pdf_fine, name="Fine mode", fill='tozeroy', fillcolor='rgba(52,152,219,0.3)'))
-            fig.add_trace(go.Scatter(x=x_fine, y=pdf_coarse, name="Coarse mode", fill='tozeroy', fillcolor='rgba(231,76,60,0.3)'))
-            fig.add_trace(go.Scatter(x=x_fine, y=pdf_fine+pdf_coarse, name="Total", line=dict(width=4, color='#2c3e50')))
-            fig.update_layout(height=420, template="simple_white", xaxis_type="log", xaxis_title="Particle Size (µm)", yaxis_title="Density")
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            fig_psd = go.Figure()
+            fig_psd.add_trace(go.Scatter(
+                x=x_um, y=q3,
+                mode='lines+markers',
+                line=dict(color='#3498db', width=4),
+                marker=dict(size=6),
+                showlegend=False
+            ))
 
-        # Gauge
+            # White circles with labels at x10, x50, x90
+            for val, label in [(x10, "x10"), (x50, "x50"), (x90, "x90")]:
+                idx = np.argmin(np.abs(x_um - val))
+                y_val = q3[idx]
+                fig_psd.add_trace(go.Scatter(
+                    x=[val], y=[y_val],
+                    mode='markers',
+                    marker=dict(color="white", size=16, line=dict(color="#3498db", width=3)),
+                    showlegend=False
+                ))
+                # Optional: add text label inside circle
+                fig_psd.add_annotation(
+                    x=val, y=y_val,
+                    text=label,
+                    showarrow=False,
+                    font=dict(size=11, color="#2c3e50"),
+                    bgcolor="white",
+                    borderpad=4
+                )
+
+            fig_psd.update_layout(
+                height=420,
+                template="simple_white",
+                margin=dict(t=30),
+                xaxis_type="log",
+                xaxis_title="Particle Size (µm)",
+                yaxis_title="CDF (%)",
+                yaxis_range=[0, 105]
+            )
+            st.plotly_chart(fig_psd, use_container_width=True, config={'displayModeBar': False})
+
+        # === 2) GAUGE + CATEGORY TEXT (your original perfect version) ===
         with gauge:
-            fig_g = go.Figure(go.Indicator(
+            fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number",
-                value=ffc,
+                value=ffc_value,
                 number={'font': {'size': 56, 'color': gauge_color}},
-                gauge={'axis': {'range': [1, 10], 'tickvals': [1,2,4,6,10]},
-                       'bar': {'color': gauge_color},
-                       'bgcolor': "#f8f9fa",
-                       'steps': [{'range': [1,2], 'color': '#fce8e8'},
-                                 {'range': [2,4], 'color': '#fdebd0'},
-                                 {'range': [4,6], 'color': '#fffacd'},
-                                 {'range': [6,10], 'color': '#e8f5e9'}],
-                       'threshold': {'line': {'color': gauge_color, 'width': 8}, 'value': ffc}
-                }))
-            fig_g.update_layout(height=380, margin=dict(l=40,r=60,t=40,b=10), paper_bgcolor="rgba(0,0,0,0)")
-            st.plotly_chart(fig_g, use_container_width=True, config={'displayModeBar': False})
+                gauge={
+                    'axis': {'range': [1, 10], 'tickvals': [1,2,4,6,10], 'ticktext': ['1','2','4','6','10'], 'tickfont': {'size': 18}},
+                    'bar': {'color': gauge_color},
+                    'bgcolor': "#f8f9fa",
+                    'steps': [
+                        {'range': [1,2], 'color': '#fce8e8'},
+                        {'range': [2,4], 'color': '#fdebd0'},
+                        {'range': [4,6], 'color': '#fffacd'},
+                        {'range': [6,10], 'color': '#e8f5e9'}
+                    ],
+                    'threshold': {'line': {'color': gauge_color, 'width': 8}, 'value': ffc_value}
+                }
+            ))
+            fig_gauge.update_layout(height=380, margin=dict(l=40, r=60, t=40, b=10), paper_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_gauge, use_container_width=True, config={'displayModeBar': False})
 
         with cat_text:
-            st.markdown(f"<h2 style='text-align:center;color:{gauge_color};margin-top:-60px'>{cat}</h2>", unsafe_allow_html=True)
-
-        with risk_card:
             st.markdown(f"""
-            <div style='height:400px;display:flex;flex-direction:column;justify-content:center;align-items:center;'>
-                <div style='font-size:7rem;margin-bottom:1rem;'>{emoji}</div>
-                <h2 style='color:{risk_color};margin:0.6rem 0;font-size:2.1rem;'>{risk}</h2>
-                <p style='font-size:1.1rem;color:#555;'>Confidence: {result['Confidence']}</p>
+            <div style="text-align: center; margin-top: -80px;">
+                <h2 style="color: {gauge_color}; margin: 0; font-size: 2.3rem; font-weight: 700;">
+                    {cat}
+                </h2>
             </div>
             """, unsafe_allow_html=True)
 
-        # Optional: show all fitted params in expander
+        # === 3) RISK CARD — BALL EMOJIS + CONFIDENCE IN % ===
+        with risk_card:
+            confidence_percent = int(round(confidence * 100))
+            st.markdown(f"""
+            <div style="
+                height: 400px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+            ">
+                <div style="font-size: 7.5rem; margin-bottom: 0.8rem;">{emoji}</div>
+                <h2 style="color: {risk_color}; margin: 0.4rem 0; font-size: 2.1rem; font-weight: 600;">
+                    {risk}
+                </h2>
+                <p style="margin: 0.6rem 0 0 0; font-size: 1.5rem; color: #444;">
+                    Confidence: <strong>{confidence_percent}%</strong>
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Optional expander stays if you want it
         with st.expander("Show fitted bimodal parameters"):
             st.json({k: result[k] for k in result if k.startswith(('w_','med_','sigma_'))})
 
