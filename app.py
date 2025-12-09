@@ -414,42 +414,44 @@ else:
             """, unsafe_allow_html=True)
 
         # === 3) RISK CARD — BALL EMOJIS + CONFIDENCE IN % ===
-        st.markdown(f"""
-        <div style="
-            height: 400px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        ">
-            <!-- Big ball emoji -->
-            <div style="font-size: 7.5rem; margin-bottom: 1rem; line-height: 1;">{ball}</div>
-            
-            <!-- Risk category – colored -->
-            <h2 style="
-                color: {risk_color};
-                margin: 0;
-                font-size: 2.1rem;
-                font-weight: 700;
-                line-height: 1.2;
+         with risk_card:
+            confidence_percent = int(round(result['Confidence'] * 100))
+            st.markdown(f"""
+            <div style="
+                height: 400px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             ">
-                {risk}
-            </h2>
-            
-            <!-- Confidence – pure white, bold, perfectly centered -->
-            <p style="
-                margin: 0.8rem 0 0 0;
-                font-size: 1.55rem;
-                font-weight: 600;
-                color: white;
-                text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-            ">
-                Confidence: <strong>{confidence_percent}%</strong>
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+                <!-- Big ball emoji -->
+                <div style="font-size: 7.5rem; margin-bottom: 1rem; line-height: 1;">{ball}</div>
+                
+                <!-- Risk category – colored -->
+                <h2 style="
+                    color: {risk_color};
+                    margin: 0;
+                    font-size: 2.1rem;
+                    font-weight: 700;
+                    line-height: 1.2;
+                ">
+                    {risk}
+                </h2>
+                
+                <!-- Confidence – pure white, bold, perfectly centered -->
+                <p style="
+                    margin: 0.8rem 0 0 0;
+                    font-size: 1.55rem;
+                    font-weight: 600;
+                    color: white;
+                    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+                ">
+                    Confidence: <strong>{confidence_percent}%</strong>
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
 
         # Optional expander stays if you want it
         with st.expander("Show fitted bimodal parameters"):
