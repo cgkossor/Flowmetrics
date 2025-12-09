@@ -416,7 +416,6 @@ else:
         # === 3) RISK CARD — BALL EMOJIS + CONFIDENCE IN % ===
         with risk_card:
             confidence_percent = int(round(confidence * 100))
-
             st.markdown(f"""
             <div style="
                 height: 400px;
@@ -425,32 +424,12 @@ else:
                 justify-content: center;
                 align-items: center;
                 text-align: center;
-                background: transparent;
             ">
-                <!-- Big Ball Emoji -->
-                <div style="font-size: 7.8rem; margin-bottom: 1.3rem; line-height: 1;">
-                    {emoji}
-                </div>
-
-                <!-- Risk Category Title -->
-                <h2 style="
-                    color: {risk_color};
-                    margin: 0 0 0.8rem 0;
-                    font-size: 2.15rem;
-                    font-weight: 700;
-                    letter-spacing: -0.5px;
-                ">
+                <div style="font-size: 7.5rem; margin-bottom: 0.8rem;">{emoji}</div>
+                <h2 style="color: {risk_color}; margin: 0.4rem 0; font-size: 2.1rem; font-weight: 600;">
                     {risk}
                 </h2>
-
-                <!-- Confidence — WHITE, BOLD, PERFECTLY CENTERED -->
-                <p style="
-                    margin: 0;
-                    font-size: 1.6rem;
-                    color: white;
-                    font-weight: 700;
-                    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
-                ">
+                <p style="margin: 0.6rem 0 0 0; font-size: 1.5rem; color: #444;">
                     Confidence: <strong>{confidence_percent}%</strong>
                 </p>
             </div>
