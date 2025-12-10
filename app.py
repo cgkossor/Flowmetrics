@@ -262,7 +262,7 @@ st.markdown("""
 st.markdown("""
 <div class="compact-header">
     <h1>Flowmetrics</h1>
-    <p>Bimodal PSD → Flowability Prediction (Next-Gen Model)</p>
+    <p>Particle Scale Properties to Flowability Prediction</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -272,11 +272,9 @@ st.markdown("""
 with st.sidebar:
     st.header("Input Parameters", divider="gray")
     name = st.text_input("Sample Name", "Sample 1", label_visibility="collapsed")
-    col1, col2 = st.columns(2)
-    with col1:
-        x10 = st.number_input("x10 (µm)", value=5.76, step=0.01, format="%.3f")
-        x50 = st.number_input("x50 (µm)", value=19.45, step=0.01, format="%.3f")
-        x90 = st.number_input("x90 (µm)", value=43.76, step=0.01, format="%.3f")
+    x10 = st.number_input("x10 (µm)", value=5.76, step=0.01, format="%.3f")
+    x50 = st.number_input("x50 (µm)", value=19.45, step=0.01, format="%.3f")
+    x90 = st.number_input("x90 (µm)", value=43.76, step=0.01, format="%.3f")
     frac = st.number_input("Blend Fraction 1 (%)", value=25.0, step=0.1)
     run = st.button("Run Prediction", type="primary", use_container_width=True)
 
