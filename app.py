@@ -287,7 +287,7 @@ card2 = c2.container()
 card3 = c3.container()
 
 with card1:
-    st.markdown('<div class="fixed-card"><div class="card-title">Reconstructed PSD"</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="fixed-card"><div class="card-title">Reconstructed PSD</div></div>', unsafe_allow_html=True)
     psd_plot = st.empty()
 with card2:
     st.markdown('<div class="fixed-card"><div class="card-title">Predicted Flowability (FFC)</div></div>', unsafe_allow_html=True)
