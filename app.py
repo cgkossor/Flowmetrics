@@ -416,28 +416,25 @@ else:
 
         # === 3) RISK CARD — BALL EMOJIS + CONFIDENCE IN % ===
         with risk_card:
-           confidence_percent = int(round(confidence * 100))
-           st.markdown(f"""
-           <div style="
-               height: 400px;
-               display: flex;
-               flex-direction: column;
-               justify-content: center;
-               align-items: center;
-               text-align: center;
+            confidence_percent = int(round(confidence * 100))
+            
+            st.markdown(f"""
+            <div style="height: 400px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
             ">
-               <div style="font-size: 7.5rem; margin-bottom: 0.8rem;">{emoji}</div>
-               <h2 style="color: {risk_color}; margin: 0.4rem 0; font-size: 2.1rem; font-weight: 600;">
-                   {risk}
-               </h2>
-               <h2 style="margin: 0.4rem 0; font-size: 2.1rem; font-weight: 600;">
-                   Confidence: <strong>{confidence_percent}%</strong
-               </h2>
-               <p style="margin: 0.4rem 0 0 0; font-size: 1.8rem; color: #fff;">
-                   Confidence: <strong>{confidence_percent}%</strong>
-               </p>
-           </div>
-           """, unsafe_allow_html=True)
+                <div style="font-size: 7.5rem; margin-bottom: 1rem;">
+                    {emoji}
+                </div>
+                <div style="color: {risk_color}; font-size: 2.8rem; font-weight: 700; margin: 0.5rem 0; line-height: 1.2;
+                ">
+                    {risk}
+                </div>
+                <div style="
+                    font-size: 2rem; color: #ffffff; font-weight: 500; margin-top: 0.3rem;
+                ">
+                    Confidence: <strong style="font-weight: 800;">{confidence_percent}%</strong>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     except Exception as e:
         st.error("Prediction failed. Check inputs.")
