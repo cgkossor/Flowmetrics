@@ -232,6 +232,10 @@ def predict_bimodal(inputs):
 
     return pd.DataFrame(results) if len(results) > 1 else results[0]
 
+
+
+
+
 # ===================================================================
 # 5. PAGE CONFIG & STYLING (your beautiful design kept!)
 # ===================================================================
@@ -272,7 +276,6 @@ with st.sidebar:
     with col1:
         x10 = st.number_input("x10 (µm)", value=5.76, step=0.01, format="%.3f")
         x50 = st.number_input("x50 (µm)", value=19.45, step=0.01, format="%.3f")
-    with col2:
         x90 = st.number_input("x90 (µm)", value=43.76, step=0.01, format="%.3f")
     frac = st.number_input("Blend Fraction 1 (%)", value=25.0, step=0.1)
     run = st.button("Run Prediction", type="primary", use_container_width=True)
