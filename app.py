@@ -436,14 +436,10 @@ else:
            </div>
            """, unsafe_allow_html=True)
 
-        # Optional expander stays if you want it
-        with st.expander("Show fitted bimodal parameters"):
-            st.json({k: result[k] for k in result if k.startswith(('w_','med_','sigma_'))})
-
     except Exception as e:
         st.error("Prediction failed. Check inputs.")
         st.exception(e)
 
 # Footer
 st.markdown("---")
-st.markdown("<p style='text-align:center;color:#95a5a6;'>C. Kossor © 2025 – Bimodal Flowability Predictor v2</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#95a5a6;'>C. Kossor (cgkossor@gmail.com) © 2025 – Flowmetrics Flowability Predictor</p>", unsafe_allow_html=True)
