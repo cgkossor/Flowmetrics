@@ -245,8 +245,11 @@ def predict_bimodal(inputs):
             'x50_um': round(x50, 3),
             'x90_um': round(x90, 3),
             'Frac_1_%': frac,
-            'Predicted_FFC': round(pred_capped, 3),
             'Predicted_FFC_Bo': round(pred_capped_Bo, 3),
+            'Bo_g': round(Bo_g, 3),
+            'Specific_SA': round(specific_SA, 3),
+            'smd_um': round(smd_calc * 1e6, 3),
+            'Predicted_FFC': round(pred_capped, 3),
             'STD': round(pred_std, 3),
             'RSD_%': round(pred_std / max(pred_mean, 1e-8) * 100, 2),
             'Predicted_Category': category,
@@ -730,10 +733,10 @@ if st.session_state.page == "Single":
 
         st.markdown('<div class="ultra-compact">', unsafe_allow_html=True)
 
-        # ── Main layout: model (+run) | material props (split) | PSD (split) ──
-        cols = st.columns([22, 1, 14, 14, 1, 14, 14, 1, 18])   # model | sep | dens+surf | asper+frac | sep | name+x10 | x50+x90 | sep | run (but run is moved)
+        # ── Column layout ─────────────────────────────────────────────
+        cols = st.columns([22, 1, 14, 14, 1, 14, 14, 1, 18])
 
-        # ── Model + Run underneath ───────────────────────────────
+        # ── Model + Run + Download ───────────────────────────────
         with cols[0]:
             st.markdown('<div class="model-col">', unsafe_allow_html=True)
             st.markdown('<div class="group-title">Model</div>', unsafe_allow_html=True)
@@ -747,10 +750,13 @@ if st.session_state.page == "Single":
                 key="model_selection"
             )
             
-            st.markdown('<div class="run-btn" style="text-align:center;">', unsafe_allow_html=True)
+            st.markdown('<div style="text-align:center;">', unsafe_allow_html=True)
             run = st.button("Run", type="primary", key="run_prediction")
             st.markdown('</div>', unsafe_allow_html=True)
-            
+
+            # Download button will be placed here conditionally
+            download_placeholder = st.empty()
+
             st.markdown('</div>', unsafe_allow_html=True)
 
         # ── Material / Conditions ─ split into two narrow columns ──
@@ -814,9 +820,9 @@ if st.session_state.page == "Single":
                 "x50_um": x50,
                 "x90_um": x90,
                 "Frac_1_%": frac,
-                "rho_kgm3" : density,
-                "SE_jm2" : surf_energy,
-                "d_asp_nm" : d_asperity,
+                "rho_kgm3": density,
+                "SE_jm2": surf_energy,
+                "d_asp_nm": d_asperity,
             })
 
             # ── MODEL-BASED FFC SELECTION ────────────────────────────────
@@ -828,7 +834,7 @@ if st.session_state.page == "Single":
                 ffc_value = 0.5 * result['Predicted_FFC'] + 0.5 * result['Predicted_FFC_Bo']
             else:
                 ffc_value = result['Predicted_FFC']  # fallback
-            # ffc_value = result['Predicted_FFC']
+
             cat = result['Predicted_Category']
             risk = result['Risk_Category']
             confidence = result['Confidence']
@@ -844,7 +850,48 @@ if st.session_state.page == "Single":
             risk_color = risk_colors.get(risk, "#7f8c8d")
             emoji = "🟢" if "Low" in risk else "🟡" if "Moderate" in risk else "🟠" if "High" in risk else "🔴"
 
-            # PSD Plot
+            # ── PREPARE EXCEL DOWNLOAD ───────────────────────────────────
+            results_df = pd.DataFrame([{
+                "Sample_ID": name,
+                "Selected_Model": selected_model,
+                "d10_um": x10,
+                "d50_um": x50,
+                "d90_um": x90,
+                "Weight_Frac_%": frac,
+                "Density_kgm3": density,
+                "Surface_Energy_jm2": surf_energy,
+                "Asperity_Size_nm": d_asperity,
+                'Bond Number': result['Bo_g'],
+                'Surface_SA_m2': result['Specific_SA'],
+                'SMD_um': result['smd_um'],
+                "FFC": round(ffc_value, 2),
+                "Predicted_Category" : cat,
+                "Risk_Category" : risk,
+                "Confidence_%" : int(round(confidence * 100))
+            }])
+
+            # Prepare Excel in memory
+            output = io.BytesIO()
+
+            # Let pandas choose the engine automatically (will use openpyxl if installed)
+            results_df.to_excel(output, index=False, sheet_name="Prediction")
+
+            output.seek(0)
+
+            # Then the download button
+            with download_placeholder:
+                st.download_button(
+                    label="Save to Excel",
+                    data=output,
+                    file_name=f"{name.replace(' ', '_')}_FFC_Prediction.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="download_excel_single",
+                    help="Download prediction results as Excel file",
+                    use_container_width=True,
+                    type="secondary"
+                )
+
+            # ── PSD Plot ─────────────────────────────────────────────────
             with psd_plot:
                 w1 = result['w_fine']
                 med1 = result['med_fine']
@@ -855,7 +902,8 @@ if st.session_state.page == "Single":
                 q3_generated = bimodal_cdf(x_um_generated, w1, med1, sigma1, med2, sigma2) * 100
 
                 fig_psd = go.Figure()
-                fig_psd.add_trace(go.Scatter(x=x_um_generated, y=q3_generated, mode='lines', line=dict(color='#3498db', width=4), showlegend=False))
+                fig_psd.add_trace(go.Scatter(x=x_um_generated, y=q3_generated, mode='lines', 
+                                           line=dict(color='#3498db', width=4), showlegend=False))
                 for val in [x10, x50, x90]:
                     idx = np.argmin(np.abs(x_um_generated - val))
                     y_val = q3_generated[idx]
@@ -863,10 +911,11 @@ if st.session_state.page == "Single":
                                                marker=dict(color="white", size=16, line=dict(color='#3498db', width=3)),
                                                showlegend=False))
                 fig_psd.update_layout(height=420, template="simple_white", margin=dict(t=30),
-                                      xaxis_type="log", xaxis_title="Particle Size (µm)", yaxis_title="CDF (%)", yaxis_range=[0, 105])
+                                    xaxis_type="log", xaxis_title="Particle Size (µm)", 
+                                    yaxis_title="CDF (%)", yaxis_range=[0, 105])
                 st.plotly_chart(fig_psd, use_container_width=True, config={'displayModeBar': False})
 
-            # Gauge
+            # ── Gauge + Category ─────────────────────────────────────────
             with gauge:
                 fig_gauge = go.Figure(go.Indicator(
                     mode="gauge+number",
@@ -897,7 +946,7 @@ if st.session_state.page == "Single":
                 </div>
                 """, unsafe_allow_html=True)
 
-            # Risk Card
+            # ── Risk Card ────────────────────────────────────────────────
             with risk_card:
                 confidence_percent = int(round(confidence * 100))
                 st.markdown(f"""
