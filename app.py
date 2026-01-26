@@ -13,6 +13,7 @@ import re
 import warnings
 import requests
 import io
+from itertools import product
 warnings.filterwarnings("ignore")
 
 # ===================================================================
@@ -22,12 +23,12 @@ FIXED_EDGES = np.logspace(np.log10(0.5), np.log10(1000), 97)
 x_mid = (FIXED_EDGES[:-1] + FIXED_EDGES[1:]) / 2
 
 #CONSTANTS 
-Z_0 = 4e-10
-D_0 = 1.65e-10
-g = 9.81
-Rho_p_default = 1100
-SE_default = 0.40
-d_asp_default = 0
+Z_0 = 4e-10              # m
+D_0 = 1.65e-10           # m
+g = 9.81                 # m/s²
+Rho_p_default = 1100     # kg/m3
+SE_default = 0.40        # J/m2
+d_asp_default = 0        # nm
 
 
 def bimodal_cdf(x, w1, med1, sigma1, med2, sigma2):
@@ -570,6 +571,125 @@ def Blend_Mix(comp1, comp2, n=11):
 
 
 
+
+
+def calculate_hamaker_constant(gamma, D0=D_0):
+    return 24.0 * np.pi * (D0**2) * gamma
+
+def bond_number_single(A, D, rho, d=0.0):
+    F_adh = (A*d)/(8*Z_0**2) + (A*D)/(24*(Z_0 + 2*d)**2)
+    weight = rho * (np.pi*D**3 / 6.0) * g
+    return F_adh / weight if weight != 0 else 0.0
+
+def harmonic_mean(x, y, factor2=False):
+    if x + y == 0:
+        return 0.0
+    if factor2:
+        return 2.0 * x * y / (x + y)
+    return x * y / (x + y)
+
+def geometric_mean(x, y):
+    return np.sqrt(x * y)
+
+def bond_number_cross(comp_i, comp_j):
+    A_i, A_j = comp_i['A'], comp_j['A']
+    D_i, D_j = comp_i['D'], comp_j['D']
+    d_i, d_j = comp_i['d'], comp_j['d']
+    rho_i, rho_j = comp_i['rho'], comp_j['rho']
+
+    A_ij   = geometric_mean(A_i, A_j)
+    D_ij   = harmonic_mean(D_i, D_j)
+    W_i    = rho_i * (np.pi * D_i**3 / 6) * g
+    W_j    = rho_j * (np.pi * D_j**3 / 6) * g
+    W_ij   = harmonic_mean(W_i, W_j, factor2=True)
+
+    if d_i == 0 and d_j == 0:
+        d_small    = 0.0
+        sphere_sep = Z_0
+    elif d_i > 0 and d_j == 0:
+        d_small    = 2.0 * d_i * D_j / (d_i + D_j) if (d_i + D_j) else 0.0
+        sphere_sep = Z_0 + d_i
+    elif d_i == 0 and d_j > 0:
+        d_small    = 2.0 * d_j * D_i / (d_j + D_i) if (d_j + D_i) else 0.0
+        sphere_sep = Z_0 + d_j
+    else:
+        d_small    = harmonic_mean(d_i, d_j)
+        sphere_sep = Z_0 + d_i + d_j
+
+    F_adh_ij = (A_ij * d_small) / (8 * Z_0**2) + (A_ij * D_ij) / (24 * sphere_sep**2)
+    return F_adh_ij / W_ij if W_ij != 0 else 0.0
+
+# ────────────────────────────────────────────────
+#  MULTI-COMPONENT SYSTEM
+# ────────────────────────────────────────────────
+
+class MultiComponentSystem:
+    def __init__(self, n_components):
+        self.n_components = n_components
+        self.components = []
+        self.bond_matrix = None
+
+    def add_component(self, name, rho, D, gamma, d, is_coated=False):
+        A = calculate_hamaker_constant(gamma)
+        self.components.append({
+            'name': name,
+            'rho': rho,
+            'D': D,
+            'gamma': gamma,
+            'd': d,
+            'A': A,
+            'is_coated': is_coated
+        })
+
+    def calculate_bond_matrix(self):
+        n = len(self.components)
+        self.bond_matrix = np.zeros((n, n))
+
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    c = self.components[i]
+                    self.bond_matrix[i,j] = bond_number_single(c['A'], c['D'], c['rho'], c['d'])
+                else:
+                    self.bond_matrix[i,j] = bond_number_cross(self.components[i], self.components[j])
+
+        # Symmetrize
+        for i in range(n):
+            for j in range(i+1, n):
+                avg = (self.bond_matrix[i,j] + self.bond_matrix[j,i]) / 2
+                self.bond_matrix[i,j] = self.bond_matrix[j,i] = avg
+
+        return self.bond_matrix
+
+    def calculate_mixture_bond(self, weight_fractions):
+        if self.bond_matrix is None:
+            self.calculate_bond_matrix()
+
+        n = len(self.components)
+        denom = sum(w / (c['rho'] * c['D']) for w, c in zip(weight_fractions, self.components) if c['D'] > 0)
+        if denom == 0:
+            return 0.0
+
+        fSA = np.array([
+            (w / (c['rho'] * c['D'])) / denom if c['D'] > 0 else 0.0
+            for w, c in zip(weight_fractions, self.components)
+        ])
+
+        sum_terms = 0.0
+        for i in range(n):
+            for j in range(n):
+                if self.bond_matrix[i,j] > 0 and fSA[i] > 0 and fSA[j] > 0:
+                    sum_terms += fSA[i] * fSA[j] / self.bond_matrix[i,j]
+
+        return 1.0 / sum_terms if sum_terms != 0 else 0.0
+
+
+
+
+
+
+
+
 # ===================================================================
 # 5. PAGE CONFIG & STYLING (unchanged – your beautiful design kept!)
 # ===================================================================
@@ -648,6 +768,9 @@ with st.sidebar:
     
     if st.button("Blends", use_container_width=True, type="primary" if st.session_state.get("page", "Single") == "Blends" else "secondary"):
         st.session_state.page = "Blends"
+
+    if st.button("Dry Coating", use_container_width=True, type="primary" if st.session_state.get("page", "Single") == "Blends" else "secondary"):
+        st.session_state.page = "Dry Coating"
 
 # Initialize page
 if "page" not in st.session_state:
@@ -969,7 +1092,7 @@ if st.session_state.page == "Single":
 
 
 elif st.session_state.page == "Blends":
-    st.subheader("Blends Prediction")
+    # st.subheader("Blends Prediction")
 
     # Main layout: 1/3 inputs, 2/3 plot
     col_input, col_plot = st.columns([1, 2])
@@ -1188,6 +1311,208 @@ elif st.session_state.page == "Blends":
             )
 
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+elif st.session_state.page == "Dry Coating":
+    # st.subheader("Dry Coating Applications")
+    # ────────────────────────────────────────────────
+    #  STREAMLIT APP
+    # ────────────────────────────────────────────────
+
+    st.set_page_config(page_title="Dry Coating Applications", layout="wide")
+    st.title("Dry Coating Applications")
+    st.caption("Compare uncoated / coated scenarios and mixture effective bond numbers")
+
+    # ─── Narrow top section ───────────────────────────────
+    left_content, right_empty = st.columns([1.2, 4])
+
+    with left_content:
+        n_comp = st.number_input(
+            "Number of components in the mixture",
+            min_value=1,
+            max_value=10,
+            value=2,
+            step=1
+        )
+
+    # ─── Create tabs for cleaner organization ─────────────────────
+    tab_comp, tab_coat, tab_compost, tab_results = st.tabs([
+        "Base Properties", "Coating Properties", "Composition", "Results & Download"
+    ])
+
+    # ─── Collect base properties ──────────────────────────────────
+    with tab_comp:
+        st.subheader("Base (uncoated) properties")
+
+        base_data = []
+        for i in range(n_comp):
+            with st.expander(f"Component {i+1}", expanded=True):
+                col1, col2 = st.columns([2,3])
+                with col1:
+                    name = st.text_input(f"Name", value=f"Cmp {i+1}", key=f"name_base_{i}")
+                with col2:
+                    c1, c2, c3, c4 = st.columns(4)
+                    with c1: rho  = st.number_input("Density (kg/m³)", min_value=100.0, value=1200., step=100.0, key=f"rho_{i}")
+                    with c2: D    = st.number_input("Diameter (µm)",    min_value=1e-9, value=50.0,  step=5.0, key=f"D_{i}")
+                    with c3: gamma= st.number_input("γ (J/m²)",         min_value=0.001, value=0.050, step=0.001, key=f"gamma_{i}")
+                    with c4: d    = st.number_input("Asperity d (nm)",   min_value=0.0,   value=0.0,   step=1.0, key=f"d_{i}")
+
+                base_data.append((name, rho, D * 1e-6, gamma, d * 1e-9))
+
+    # ─── Collect coated properties ────────────────────────────────
+    with tab_coat:
+        st.subheader("Coating properties (applied when coating is active)")
+
+        # ── Reference table ───────────────────────────────────────
+        st.markdown("### Typical dry coating reference values")
+        ref_data = {
+            "Coating Material": ["Silica (SiO₂)", "Silica (SiO₂)"],
+            "Type" : ['R972P', 'A200'],
+            "Coated γ (J/m²)": [0.0364, 0.044],
+            "Coated asperity d (nm)": [20, 12]
+        }
+        ref_df = pd.DataFrame(ref_data)
+        st.dataframe(
+            ref_df.style.format({
+                "Coated γ (J/m²)": "{:.3f}",
+                "Coated asperity d (nm)": "{:.1f}"
+            }),
+            hide_index=True,
+            use_container_width=False   # narrower table
+        )
+
+        st.caption("These are example/reference values — feel free to use them or enter your own below.")
+
+        # ── User input for each component's coating ───────────────
+        coated_data = []
+        for i in range(n_comp):
+            name_base = base_data[i][0] if base_data else f"Component {i+1}"
+            with st.expander(f"Coating for {name_base}", expanded=True):
+                c1, c2 = st.columns(2)
+                with c1:
+                    gamma_c = st.number_input(
+                        "Coated γ (J/m²)",
+                        min_value=0.001,
+                        value=0.030,
+                        step=0.001,
+                        key=f"gamma_c_{i}"
+                    )
+                with c2:
+                    d_c_m = st.number_input(
+                        "Coated asperity d (nm)",
+                        min_value=0.0,
+                        value=5.0,
+                        step=1.0,
+                        key=f"d_c_{i}"
+                    )
+                    # Optional: show in nm too
+                    # st.caption(f"≈ {d_c_m * 1e9:.1f} nm")
+
+                coated_data.append((name_base, gamma_c, d_c_m * 1e-9))
+
+
+    # ─── Composition ──────────────────────────────────────────────
+    with tab_compost:
+        st.subheader("Mixture composition (weight %)")
+        st.caption("Values are automatically normalized to 100%")
+
+        wt_pcts = []
+        cols = st.columns(min(n_comp, 4))
+        for i in range(n_comp):
+            with cols[i % len(cols)]:
+                wt = st.number_input(f"{base_data[i][0]}  wt%", min_value=0.0, max_value=100.0, value=100.0/n_comp, step=0.5, key=f"wt_{i}")
+                wt_pcts.append(wt)
+
+        total = sum(wt_pcts)
+        if abs(total - 100) > 0.01:
+            st.info(f"Weight percentages sum to {total:.1f}% → will be normalized")
+
+        weight_fractions = np.array(wt_pcts) / total if total > 0 else np.ones(n_comp)/n_comp
+
+    # ─── Results & Download ───────────────────────────────────────
+    with tab_results:
+        if st.button("Calculate all coating scenarios", type="primary", use_container_width=True):
+            with st.spinner("Generating all 2ⁿ coating combinations …"):
+                scenarios = []
+                for pattern in product([False, True], repeat=n_comp):
+                    # Build scenario name
+                    coated_idx = [k for k, coated in enumerate(pattern) if coated]
+                    if not coated_idx:
+                        scen_name = "All uncoated"
+                    elif len(coated_idx) == n_comp:
+                        scen_name = "All coated"
+                    else:
+                        names = [base_data[k][0] for k in coated_idx]
+                        scen_name = f"Coated: {', '.join(names)}"
+
+                    # Build system
+                    sys = MultiComponentSystem(n_comp)
+                    for k in range(n_comp):
+                        if pattern[k]:
+                            nm, g_c, d_c = coated_data[k]
+                            rho, D = base_data[k][1:3]
+                            sys.add_component(f"{nm}_coated", rho, D, g_c, d_c, is_coated=True)
+                        else:
+                            nm, rho, D, g, d = base_data[k]
+                            sys.add_component(nm, rho, D, g, d, is_coated=False)
+
+                    sys.calculate_bond_matrix()
+                    B_mix = sys.calculate_mixture_bond(weight_fractions)
+
+                    row = {"Scenario": scen_name, "B_mixture": B_mix}
+
+                    # Add pairwise bond numbers
+                    n = n_comp
+                    for i in range(n):
+                        for j in range(i, n):
+                            key = f"B_{i+1}{j+1}" if i==j else f"B_{i+1}-{j+1}"
+                            row[key] = sys.bond_matrix[i,j]
+
+                    scenarios.append(row)
+
+                df = pd.DataFrame(scenarios)
+
+                # ─── Display ───────────────────────────────────────
+                st.success(f"Calculated {len(df)} scenarios")
+
+                st.subheader("Mixture Bond Number (B_mix)")
+                st.dataframe(
+                    df[["Scenario", "B_mixture"]].sort_values("B_mixture", ascending=False)
+                    .style.format({"B_mixture": "{:.4e}"})
+                    .highlight_max(subset="B_mixture", color="#d4f4dd")
+                    .highlight_min(subset="B_mixture", color="#ffe6e6"),
+                    use_container_width=True
+                )
+
+                with st.expander("All pairwise Bond numbers", expanded=False):
+                    pair_cols = [c for c in df.columns if c.startswith("B_") and c != "B_mixture"]
+                    st.dataframe(
+                        df[["Scenario"] + pair_cols]
+                        .style.format("{:.3e}", subset=pair_cols),
+                        use_container_width=True
+                    )
+
+                # ─── Download ──────────────────────────────────────
+                csv = df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📥 Download results as CSV",
+                    data=csv,
+                    file_name="bond_number_scenarios.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+
+                # Quick stats
+                st.caption("Summary")
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Lowest B_mix", f"{df['B_mixture'].min():.3e}")
+                col2.metric("Highest B_mix", f"{df['B_mixture'].max():.3e}")
+                col3.metric("Mean B_mix", f"{df['B_mixture'].mean():.3e}")
+
+        else:
+            st.info("Press the button above to calculate all coating scenarios.")
+
+
+
 
 # ------------------------------------------------------------------
 # Footer
